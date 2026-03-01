@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:jameslmilner.github.io)",
+      "Bash(curl -s -X POST \"http://localhost:8080/geoserver/wfs\" -H \"Content-Type: application/xml\" -u \"admin:geoserver\" -d '<?xml version=\"\"1.0\"\" encoding=\"\"UTF-8\"\"?>:*)",
+      "Bash(curl -s \"http://localhost:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=topp:tasmania_cities&outputFormat=application/json&maxFeatures=2\")",
+      "Bash(curl -s -I \"http://localhost:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=topp:tasmania_cities&outputFormat=application/json&maxFeatures=1\")",
+      "Bash(curl -s \"http://localhost:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=topp:tasmania_cities&outputFormat=application/json&maxFeatures=1\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); f=d[''features''][0]; print\\(''ID:'', f.get\\(''id''\\)\\); print\\(''geom:'', f[''geometry''][''type'']\\)\")",
+      "Bash(curl -s -X OPTIONS \"http://localhost:8080/geoserver/wfs\" -H \"Origin: http://localhost:3000\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: Content-Type,Authorization\" -I)",
+      "Bash(curl -s -I \"http://localhost:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=topp:tasmania_cities&outputFormat=application/json&maxFeatures=1\" -H \"Origin: http://localhost:3000\")"
+    ]
+  }
+}
