@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/react-open-layers/static/css/main.c18b083d.css",
+    "main.js": "/react-open-layers/static/js/main.f8562aaf.js",
+    "static/js/453.74c59349.chunk.js": "/react-open-layers/static/js/453.74c59349.chunk.js",
+    "static/media/marker.svg": "/react-open-layers/static/media/marker.52bba44da0bc2be24f9ee6816d607147.svg",
+    "index.html": "/react-open-layers/index.html",
+    "main.c18b083d.css.map": "/react-open-layers/static/css/main.c18b083d.css.map",
+    "main.f8562aaf.js.map": "/react-open-layers/static/js/main.f8562aaf.js.map",
+    "453.74c59349.chunk.js.map": "/react-open-layers/static/js/453.74c59349.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c18b083d.css",
+    "static/js/main.f8562aaf.js"
+  ]
+}
