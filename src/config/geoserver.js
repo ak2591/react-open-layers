@@ -1,4 +1,4 @@
-export const GEOSERVER_URL = 'http://localhost:8080/geoserver';
+export const GEOSERVER_URL = process.env.REACT_APP_GEOSERVER_URL || 'http://163.245.209.231:8080/geoserver';
 
 export const GML_SRS = 'http://www.opengis.net/gml/srs/epsg.xml#4326';
 
