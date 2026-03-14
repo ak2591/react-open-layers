@@ -20,7 +20,7 @@ function MapPage() {
   const [selectMode, setSelectMode] = useState('none');
 
   // ── Hooks ────────────────────────────────────────────────────────────────
-  const { mapRef, layersRef, terraDrawRef } = useMapInit(mapContainerRef, setSelectMode);
+  const { mapRef, layersRef, terraDrawRef, doubleClickZoomRef } = useMapInit(mapContainerRef, setSelectMode);
   const { availableLayers, layersLoading } = useLayerLoader(mapRef, layersRef, wfsLayerMetaRef);
 
   const {
@@ -35,7 +35,7 @@ function MapPage() {
   const {
     activateCircleDraw, activateRectangleDraw, activateFreehandDraw,
     activatePolygonDraw, activateLineDraw, activatePointDraw, clearSelections,
-  } = useDrawTools(terraDrawRef, setSelectMode);
+  } = useDrawTools(terraDrawRef, setSelectMode, doubleClickZoomRef);
 
   // ── Auth guard ───────────────────────────────────────────────────────────
   useEffect(() => {

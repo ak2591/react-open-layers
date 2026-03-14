@@ -1,4 +1,6 @@
-export function useDrawTools(terraDrawRef, setSelectMode) {
+export function useDrawTools(terraDrawRef, setSelectMode, doubleClickZoomRef) {
+  const disableDblClickZoom = () => doubleClickZoomRef?.current?.setActive(false);
+  const enableDblClickZoom  = () => doubleClickZoomRef?.current?.setActive(true);
   const activateCircleDraw = () => {
     if (!terraDrawRef.current) return;
     terraDrawRef.current.clear();
@@ -25,6 +27,7 @@ export function useDrawTools(terraDrawRef, setSelectMode) {
     terraDrawRef.current.clear();
     terraDrawRef.current.setMode('polygon');
     setSelectMode('polygon');
+    disableDblClickZoom();
   };
 
   const activateLineDraw = () => {
@@ -32,6 +35,7 @@ export function useDrawTools(terraDrawRef, setSelectMode) {
     terraDrawRef.current.clear();
     terraDrawRef.current.setMode('linestring');
     setSelectMode('linestring');
+    disableDblClickZoom();
   };
 
   const activatePointDraw = () => {
@@ -47,6 +51,7 @@ export function useDrawTools(terraDrawRef, setSelectMode) {
       terraDrawRef.current.setMode('static');
     }
     setSelectMode('none');
+    enableDblClickZoom();
   };
 
   return {

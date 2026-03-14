@@ -22,7 +22,8 @@
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "start": "craco start",
+    "start": "env-cmd -f .env.production craco start",
+    "start:uat": "env-cmd -f .env.uat craco start",
     "build": "craco build",
     "build:uat": "env-cmd -f .env.uat craco build",
     "test": "craco test",

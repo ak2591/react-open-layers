@@ -38,6 +38,7 @@ export function useMapInit(mapContainerRef, setSelectMode) {
   const markerSourceRef = useRef(new VectorSource());
   const markerLayerRef = useRef(null);
   const terraDrawRef = useRef(null);
+  const doubleClickZoomRef = useRef(null);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -92,7 +93,7 @@ export function useMapInit(mapContainerRef, setSelectMode) {
       layers: [osmLayer, satelliteLayer, tonerLayer, markerLayer],
       view: new View({ center: fromLonLat([0, 0]), zoom: 2 }),
       controls: [contextmenu],
-      interactions: [new DragPan(), new MouseWheelZoom(), new DoubleClickZoom()],
+      interactions: [new DragPan(), new MouseWheelZoom(), doubleClickZoomRef.current = new DoubleClickZoom()],
     });
 
     mapRef.current.once('rendercomplete', () => {
@@ -126,10 +127,13 @@ export function useMapInit(mapContainerRef, setSelectMode) {
       });
 
       draw.start();
-      draw.on('finish', () => setSelectMode('none'));
+      draw.on('finish', () => {
+        setSelectMode('none');
+        if (doubleClickZoomRef.current) doubleClickZoomRef.current.setActive(true);
+      });
       terraDrawRef.current = draw;
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { mapRef, layersRef, markerSourceRef, markerLayerRef, terraDrawRef };
+  return { mapRef, layersRef, markerSourceRef, markerLayerRef, terraDrawRef, doubleClickZoomRef };
 }

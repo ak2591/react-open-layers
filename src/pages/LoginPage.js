@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css';
 
-const GEOSERVER_URL = 'https://163.245.209.231/geoserver';
+const GEOSERVER_URL = process.env.REACT_APP_GEOSERVER_URL //'https://163.245.209.231/geoserver';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
