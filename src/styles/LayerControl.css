@@ -144,3 +144,42 @@
   font-size: 12px;
   font-style: italic;
 }
+
+.layer-item-wrapper {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.legend-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #ecf0f1;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+
+.legend-btn:hover {
+  background-color: #1a6b3c;
+  border-color: #27ae60;
+}
+
+.legend-btn.active {
+  background-color: #1a6b3c;
+  border-color: #27ae60;
+  box-shadow: 0 0 6px rgba(39,174,96,0.6);
+}
+
+.layer-legend {
+  padding: 8px 20px 8px 48px;
+  background-color: rgba(0,0,0,0.3);
+  animation: slideDown 0.2s ease-out;
+}
+
+.layer-legend img {
+  display: block;
+  max-width: 100%;
+  border-radius: 3px;
+}

@@ -9,6 +9,11 @@ const GROUP_META = {
 
 function LayerControl({ availableLayers, onLayerToggle, editLayerId, onWfsEdit, layersLoading }) {
   const [expandedGroups, setExpandedGroups] = useState({ base: true, wms: false, wfs: false });
+  const [expandedLegends, setExpandedLegends] = useState({});
+
+  const toggleLegend = (layerId) => {
+    setExpandedLegends((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
+  };
   const [activeLayers, setActiveLayers] = useState(
     () => Object.fromEntries(availableLayers.map((l) => [l.id, l.defaultVisible ?? false]))
   );
@@ -99,31 +104,52 @@ function LayerControl({ availableLayers, onLayerToggle, editLayerId, onWfsEdit, 
               <div className="layer-list">
                 {layers.map((layer) => {
                   const isEditActive = editLayerId === layer.id;
+                  const legendOpen = expandedLegends[layer.id] ?? false;
                   return (
-                    <div key={layer.id} className="layer-item">
-                      <label className="layer-label">
-                        <input
-                          type="checkbox"
-                          checked={activeLayers[layer.id] ?? false}
-                          onChange={() => handleLayerToggle(layer.id)}
-                          className="layer-checkbox"
-                        />
-                        <span className="layer-name">{layer.name}</span>
-                      </label>
-                      <div className="layer-actions">
-                        {group === 'wfs' && (
-                          <button
-                            className={`edit-btn ${isEditActive ? 'active' : ''}`}
-                            title={isEditActive ? 'Editing…' : 'Edit features'}
-                            onClick={() => onWfsEdit(layer.id)}
-                          >
-                            ✏
-                          </button>
-                        )}
-                        <span className={`layer-toggle ${activeLayers[layer.id] ? 'on' : 'off'}`}>
-                          {activeLayers[layer.id] ? 'ON' : 'OFF'}
-                        </span>
+                    <div key={layer.id} className="layer-item-wrapper">
+                      <div className="layer-item">
+                        <label className="layer-label">
+                          <input
+                            type="checkbox"
+                            checked={activeLayers[layer.id] ?? false}
+                            onChange={() => handleLayerToggle(layer.id)}
+                            className="layer-checkbox"
+                          />
+                          <span className="layer-name">{layer.name}</span>
+                        </label>
+                        <div className="layer-actions">
+                          {layer.legendUrl && (
+                            <button
+                              className={`legend-btn ${legendOpen ? 'active' : ''}`}
+                              title="Toggle legend"
+                              onClick={() => toggleLegend(layer.id)}
+                            >
+                              ▤
+                            </button>
+                          )}
+                          {group === 'wfs' && (
+                            <button
+                              className={`edit-btn ${isEditActive ? 'active' : ''}`}
+                              title={isEditActive ? 'Editing…' : 'Edit features'}
+                              onClick={() => onWfsEdit(layer.id)}
+                            >
+                              ✏
+                            </button>
+                          )}
+                          <span className={`layer-toggle ${activeLayers[layer.id] ? 'on' : 'off'}`}>
+                            {activeLayers[layer.id] ? 'ON' : 'OFF'}
+                          </span>
+                        </div>
                       </div>
+                      {layer.legendUrl && legendOpen && (
+                        <div className="layer-legend">
+                          <img
+                            src={layer.legendUrl}
+                            alt={`${layer.name} legend`}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}

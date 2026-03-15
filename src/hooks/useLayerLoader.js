@@ -64,7 +64,8 @@ export function useLayerLoader(mapRef, layersRef, wfsLayerMetaRef) {
           });
           layersRef.current[id] = layer;
           mapRef.current.getLayers().insertAt(insertIdx++, layer);
-          return { id, name: wl.title, group: 'wms', defaultVisible: false, bbox4326: wl.bbox4326 };
+          const legendUrl = `${GEOSERVER_URL}/wms?SERVICE=WMS&VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=${encodeURIComponent(wl.name)}`;
+          return { id, name: wl.title, group: 'wms', defaultVisible: false, bbox4326: wl.bbox4326, legendUrl };
         });
 
         // Build & register WFS vector layers

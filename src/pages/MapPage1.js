@@ -364,7 +364,7 @@ export default function MapplsUI() {
     else { setSidebarOpen(true); setPromoOpen(true); }
   };
 
-  const toggleLeft = (sidebarOpen ? 250 : 0) + (promoOpen ? 195 : 0);
+  const toggleLeft = (sidebarOpen ? 250 : 0) ;
 
   return (
     <div style={{
@@ -379,11 +379,11 @@ export default function MapplsUI() {
         editLayerId={editLayerId}
         onWfsEdit={activateWfsEdit}
         layersLoading={layersLoading}/>
-      <PromoPanel open={promoOpen} />
+      {/* <PromoPanel open={promoOpen} /> */}
       <button onClick={toggle} style={{
         position: "absolute", left: toggleLeft, top: "50%", transform: "translateY(-50%)",
         width: 18, height: 46, borderRadius: "0 6px 6px 0",
-        background: "#fff", border: "1px solid #ddd", borderLeft: "none",
+        background: "#3ba5a5", border: "1px solid #ddd", borderLeft: "none",
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 25, boxShadow: "2px 0 4px rgba(0,0,0,.06)",
         transition: "left .3s cubic-bezier(.4,0,.2,1)",
