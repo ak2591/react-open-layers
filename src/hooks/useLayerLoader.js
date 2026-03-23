@@ -12,13 +12,13 @@ import CircleStyle from 'ol/style/Circle';
 import { GEOSERVER_URL } from '../config/geoserver';
 import { fetchWmsCapabilities, fetchWfsCapabilities, fetchGeomField } from '../services/geoserverApi';
 
-const BASE_LAYERS = [
-  { id: 'osm',       name: 'OpenStreetMap',   group: 'base', defaultVisible: true  },
-  { id: 'satellite', name: 'Satellite',        group: 'base', defaultVisible: false },
-  { id: 'toner',     name: 'Toner',            group: 'base', defaultVisible: false },
-  { id: 'districts', name: 'Indian Districts', group: 'base', defaultVisible: false },
-  { id: 'talukas',   name: 'Indian Talluka',   group: 'base', defaultVisible: false },
-];
+// const BASE_LAYERS = [
+//   { id: 'osm',       name: 'OpenStreetMap',   group: 'base', defaultVisible: true  },
+//   { id: 'satellite', name: 'Satellite',        group: 'base', defaultVisible: false },
+//   { id: 'toner',     name: 'Toner',            group: 'base', defaultVisible: false },
+//   { id: 'districts', name: 'Indian Districts', group: 'base', defaultVisible: false },
+//   { id: 'talukas',   name: 'Indian Talluka',   group: 'base', defaultVisible: false },
+// ];
 
 const WFS_COLORS = [
   '#FF6B35', '#9B5DE5', '#00BBF9', '#F15BB5',
@@ -26,7 +26,7 @@ const WFS_COLORS = [
 ];
 
 export function useLayerLoader(mapRef, layersRef, wfsLayerMetaRef) {
-  const [availableLayers, setAvailableLayers] = useState(BASE_LAYERS);
+  const [availableLayers, setAvailableLayers] = useState([]);
   const [layersLoading, setLayersLoading] = useState(false);
 
   useEffect(() => {
@@ -108,11 +108,11 @@ export function useLayerLoader(mapRef, layersRef, wfsLayerMetaRef) {
             geometryType:  wt.geometryType,
           };
 
-          return { id, name: wt.title, group: 'wfs', defaultVisible: false, bbox4326: wt.bbox4326 };
+          return { id, name: wt.title, group: 'wfs', defaultVisible: false, bbox4326: wt.bbox4326, color, geometryType: wt.geometryType };
         });
 
         setAvailableLayers([
-          ...BASE_LAYERS,
+          // ...BASE_LAYERS,
           ...newWmsEntries,
           ...newWfsEntries,
         ]);

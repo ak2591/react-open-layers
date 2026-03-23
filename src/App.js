@@ -3,9 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import MapPage from './pages/MapPage';
 import MapplsUI from './pages/MapPage1';
+import ArcGISWebEditor from './pages/ArcGISWebEditor';
+import GeoLens from './pages/GeoLens';
 
 function App() {
   console.log('GeoServer URL:', process.env.REACT_APP_GEOSERVER_URL);
+  console.log('App Port:', process.env.REACT_APP_PORT);
+  const isProduction = process.env.REACT_APP_PORT === '4200';
   return (
     <Router>
       <Routes>
@@ -13,11 +17,13 @@ function App() {
         <Route
           path="/map"
           element={
-            process.env.REACT_APP_GEOSERVER_URL === 'https://163.245.209.231/geoserver'
-              ? <MapPage />
-              : <MapplsUI />
+            isProduction
+              ? <ArcGISWebEditor />
+              : <GeoLens />
           }
         />
+        {/* <Route path="/map" element={<ArcGISWebEditor />} /> */}
+        {/* <Route path="/map" element={<GeoLens />} /> */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

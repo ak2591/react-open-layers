@@ -1,0 +1,57 @@
+:root {
+  /* Brand / Primary */
+  --gl-primary:        #16a34a;
+  --gl-primary-dim:    #22c55e;
+  --gl-primary-light:  #dcfce7;
+  --gl-primary-ring:   rgba(22, 163, 74, 0.35);
+
+  /* Surface */
+  --gl-surface:        #f3fff7;
+  --gl-surface-2:      #e6f9ee;
+  --gl-surface-3:      #d1fae5;
+  --gl-surface-card:   #ffffff;
+
+  /* Dark surfaces */
+  --gl-dark:           #052e16;
+  --gl-dark-2:         #064e3b;
+  --gl-dark-3:         #065f46;
+  --gl-dark-hover:     rgba(255, 255, 255, 0.06);
+
+  /* Text */
+  --gl-text-primary:   #052e16;
+  --gl-text-secondary: #166534;
+  --gl-text-muted:     #22c55e;
+  --gl-text-on-dark:   #ecfdf5;
+  --gl-text-on-dark-2: #a7f3d0;
+
+  /* Border */
+  --gl-border:         #bbf7d0;
+  --gl-border-dark:    rgba(255, 255, 255, 0.08);
+
+  /* Status */
+  --gl-green:          #16a34a;
+  --gl-amber:          #f59e0b;
+  --gl-red:            #ef4444;
+  --gl-blue:           #3b82f6;
+
+  /* Layout (same) */
+  --gl-header-h:       52px;
+  --gl-status-h:       30px;
+  --gl-rail-w:         64px;
+  --gl-panel-w:        240px;
+
+  /* Radius (same) */
+  --gl-r-sm:  6px;
+  --gl-r-md:  10px;
+  --gl-r-lg:  14px;
+  --gl-r-xl:  20px;
+  --gl-r-pill: 9999px;
+
+  /* Glass */
+  --gl-glass-bg:       rgba(255, 255, 255, 0.12);
+  --gl-glass-border:   rgba(255, 255, 255, 0.22);
+  --gl-glass-shadow:   0 8px 32px rgba(0, 0, 0, 0.24);
+
+  /* Transitions */
+  --gl-trans: 150ms ease;
+}
