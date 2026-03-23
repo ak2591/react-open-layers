@@ -604,6 +604,121 @@
   z-index:    0;
 }
 
+/* ─── WFS Edit Toolbar ──────────────────────────────────────── */
+.gl-wfs-toolbar {
+  position:        absolute;
+  top:             64px;
+  left:            50%;
+  transform:       translateX(-50%);
+  z-index:         51;
+  display:         flex;
+  align-items:     center;
+  gap:             4px;
+  padding:         5px 12px;
+  background:      rgba(15, 23, 42, 0.90);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border:          1px solid rgba(104,53,217,0.40);
+  border-radius:   var(--gl-r-pill);
+  box-shadow:      var(--gl-glass-shadow), 0 0 0 1px rgba(104,53,217,0.15);
+  white-space:     nowrap;
+}
+
+.gl-wfs-badge {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  font-size:   11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color:       var(--gl-primary-dim);
+  text-transform: uppercase;
+  padding-right: 2px;
+}
+
+.gl-wfs-sep {
+  width:       1px;
+  height:      22px;
+  background:  rgba(255,255,255,0.12);
+  margin:      0 4px;
+  flex-shrink: 0;
+}
+
+.gl-wfs-btn {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  padding:     5px 10px;
+  border:      none;
+  border-radius: var(--gl-r-md);
+  background:  transparent;
+  color:       var(--gl-text-on-dark-2);
+  font-size:   12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor:      pointer;
+  transition:  background var(--gl-trans), color var(--gl-trans);
+}
+.gl-wfs-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.10);
+  color:      #fff;
+}
+.gl-wfs-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.gl-wfs-btn--active {
+  background: rgba(104,53,217,0.25) !important;
+  color:      var(--gl-primary-dim) !important;
+}
+.gl-wfs-btn--danger { color: rgba(239,68,68,0.75); }
+.gl-wfs-btn--danger:hover:not(:disabled) {
+  background: rgba(239,68,68,0.15) !important;
+  color:      #ef4444 !important;
+}
+.gl-wfs-btn--save.gl-wfs-btn--unsaved { color: #4ade80; }
+.gl-wfs-btn--save.gl-wfs-btn--unsaved:hover:not(:disabled) {
+  background: rgba(74,222,128,0.12) !important;
+  color:      #4ade80 !important;
+}
+.gl-wfs-btn--exit:hover:not(:disabled) {
+  background: rgba(239,68,68,0.12) !important;
+  color:      #ef4444 !important;
+}
+
+/* ─── Layer row edit button & editing state ─────────────────── */
+.gl-layer-row-right {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+}
+
+.gl-layer-edit-btn {
+  display:     flex;
+  align-items: center;
+  padding:     3px;
+  border:      none;
+  border-radius: 4px;
+  background:  transparent;
+  color:       var(--gl-text-muted);
+  cursor:      pointer;
+  opacity:     0;
+  transition:  opacity var(--gl-trans), background var(--gl-trans), color var(--gl-trans);
+}
+.gl-layer-row:hover .gl-layer-edit-btn { opacity: 1; }
+.gl-layer-edit-btn:hover {
+  background: rgba(104,53,217,0.12);
+  color:      var(--gl-primary);
+}
+.gl-layer-edit-btn--active {
+  opacity:    1 !important;
+  color:      var(--gl-primary) !important;
+  background: rgba(104,53,217,0.14) !important;
+}
+
+.gl-layer-row--editing {
+  background: rgba(104,53,217,0.08) !important;
+  border-left: 2px solid var(--gl-primary) !important;
+}
+
 /* ─── Floating Toolbar ──────────────────────────────────────── */
 .gl-floating-toolbar {
   position:        absolute;
@@ -1590,6 +1705,347 @@
 
 .gl-bm-row:hover .gl-bm-del-btn { opacity: 1; }
 .gl-bm-del-btn:hover { background: rgba(239,68,68,0.10); color: var(--gl-red); }
+
+/* ═══════════════════════════════════════════════════════════════
+   SPATIAL SELECTION PANEL
+═══════════════════════════════════════════════════════════════ */
+.gl-spatial-panel {
+  display:        flex;
+  flex-direction: column;
+  width:          260px;
+  min-width:      260px;
+  height:         100%;
+  background:     var(--gl-surface);
+  border-right:   1px solid var(--gl-border);
+  overflow:       hidden;
+}
+
+.gl-spatial-body {
+  flex:       1;
+  overflow-y: auto;
+  padding:    16px 14px;
+  display:    flex;
+  flex-direction: column;
+  gap:        14px;
+}
+
+.gl-spatial-hint {
+  font-size:   12px;
+  color:       var(--gl-text-secondary);
+  line-height: 1.55;
+}
+
+/* ── 2×2 tool grid ── */
+.gl-spatial-tools {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   8px;
+}
+
+.gl-spatial-tool-btn {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            6px;
+  padding:        14px 8px;
+  background:     var(--gl-surface-2);
+  border:         1px solid var(--gl-border);
+  border-radius:  10px;
+  color:          var(--gl-text-secondary);
+  cursor:         pointer;
+  transition:     background var(--gl-trans), border-color var(--gl-trans), color var(--gl-trans);
+}
+.gl-spatial-tool-btn:hover {
+  background:   rgba(104,53,217,0.08);
+  border-color: var(--gl-primary);
+  color:        var(--gl-primary);
+}
+.gl-spatial-tool-btn--active {
+  background:   rgba(104,53,217,0.14);
+  border-color: var(--gl-primary);
+  color:        var(--gl-primary);
+  box-shadow:   0 0 0 2px rgba(104,53,217,0.20);
+}
+
+.gl-spatial-tool-label {
+  font-size:   11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ── Drawing status ── */
+.gl-spatial-drawing {
+  display:     flex;
+  align-items: center;
+  gap:         7px;
+  padding:     8px 10px;
+  border-radius: 8px;
+  background:  rgba(104,53,217,0.08);
+  border:      1px solid rgba(104,53,217,0.2);
+  color:       var(--gl-primary);
+  font-size:   12px;
+  font-weight: 500;
+  animation:   gl-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gl-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+/* ── Result badge ── */
+.gl-spatial-results {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       8px 10px;
+  border-radius: 8px;
+  background:    rgba(0,200,83,0.10);
+  border:        1px solid rgba(0,200,83,0.25);
+  color:         #00c853;
+  font-size:     13px;
+  font-weight:   600;
+}
+.gl-spatial-results--empty {
+  background:  rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.2);
+  color:        var(--gl-red);
+}
+
+/* ── Clear button ── */
+.gl-spatial-clear-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  padding:         9px 12px;
+  background:      var(--gl-surface-2);
+  border:          1px solid var(--gl-border);
+  border-radius:   8px;
+  color:           var(--gl-text-secondary);
+  font-size:       13px;
+  font-weight:     600;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      background var(--gl-trans), color var(--gl-trans);
+}
+.gl-spatial-clear-btn:hover:not(:disabled) {
+  background: rgba(239,68,68,0.08);
+  color:      var(--gl-red);
+  border-color: rgba(239,68,68,0.25);
+}
+.gl-spatial-clear-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER PANEL
+═══════════════════════════════════════════════════════════════ */
+.gl-filter-panel {
+  display:        flex;
+  flex-direction: column;
+  width:          300px;
+  min-width:      300px;
+  height:         100%;
+  background:     var(--gl-surface);
+  border-right:   1px solid var(--gl-border);
+  overflow:       hidden;
+}
+
+.gl-filter-body {
+  flex:       1;
+  overflow-y: auto;
+  padding:    16px 14px;
+  display:    flex;
+  flex-direction: column;
+  gap:        16px;
+}
+
+/* ── Section ── */
+.gl-filter-section {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.gl-filter-section-hdr {
+  display:     flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gl-filter-label {
+  font-size:   11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color:       var(--gl-text-secondary);
+}
+
+/* ── Layer dropdown ── */
+.gl-filter-select {
+  width:         100%;
+  padding:       8px 10px;
+  background:    var(--gl-surface-2);
+  border:        1px solid var(--gl-border);
+  border-radius: 8px;
+  color:         var(--gl-text-primary);
+  font-size:     13px;
+  font-family:   inherit;
+  cursor:        pointer;
+  outline:       none;
+  transition:    border-color var(--gl-trans);
+}
+.gl-filter-select:focus { border-color: var(--gl-primary); }
+
+/* ── Add condition button ── */
+.gl-filter-add-btn {
+  display:     inline-flex;
+  align-items: center;
+  gap:         3px;
+  padding:     3px 8px;
+  background:  rgba(104,53,217,0.12);
+  border:      1px solid rgba(104,53,217,0.25);
+  border-radius: 6px;
+  color:       var(--gl-primary);
+  font-size:   11px;
+  font-weight: 600;
+  cursor:      pointer;
+  transition:  background var(--gl-trans);
+}
+.gl-filter-add-btn:hover { background: rgba(104,53,217,0.22); }
+
+/* ── Filter rows ── */
+.gl-filter-rows {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.gl-filter-row {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+}
+
+.gl-filter-logic {
+  font-size:   9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color:       var(--gl-text-secondary);
+  min-width:   34px;
+  text-align:  right;
+}
+
+.gl-filter-prop-sel,
+.gl-filter-op-sel,
+.gl-filter-val-inp {
+  padding:     5px 7px;
+  background:  var(--gl-surface-2);
+  border:      1px solid var(--gl-border);
+  border-radius: 6px;
+  color:       var(--gl-text-primary);
+  font-size:   12px;
+  font-family: inherit;
+  outline:     none;
+  transition:  border-color var(--gl-trans);
+}
+.gl-filter-prop-sel:focus,
+.gl-filter-op-sel:focus,
+.gl-filter-val-inp:focus { border-color: var(--gl-primary); }
+
+.gl-filter-prop-sel { flex: 2; min-width: 0; }
+.gl-filter-op-sel   { flex: 1; min-width: 0; }
+.gl-filter-val-inp  { flex: 2; min-width: 0; }
+.gl-filter-val-inp::placeholder { color: var(--gl-text-secondary); opacity: 0.6; }
+
+.gl-filter-rm-btn {
+  padding:     4px;
+  background:  transparent;
+  border:      none;
+  border-radius: 4px;
+  color:       var(--gl-text-secondary);
+  cursor:      pointer;
+  display:     inline-flex;
+  align-items: center;
+  transition:  color var(--gl-trans), background var(--gl-trans);
+}
+.gl-filter-rm-btn:hover { color: var(--gl-red); background: rgba(239,68,68,0.08); }
+
+/* ── Loading ── */
+.gl-filter-loading {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  color:       var(--gl-text-secondary);
+  font-size:   13px;
+  padding:     4px 0;
+}
+@keyframes gl-spin { to { transform: rotate(360deg); } }
+.gl-filter-loading .material-symbols-outlined { animation: gl-spin 1s linear infinite; }
+
+/* ── Results badge ── */
+.gl-filter-results {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       8px 10px;
+  border-radius: 8px;
+  background:    rgba(0,200,83,0.10);
+  border:        1px solid rgba(0,200,83,0.25);
+  color:         #00c853;
+  font-size:     13px;
+  font-weight:   600;
+}
+.gl-filter-results--empty {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.2);
+  color:        var(--gl-red);
+}
+
+/* ── Hint text ── */
+.gl-filter-hint {
+  font-size:  12px;
+  color:      var(--gl-text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ── Action buttons ── */
+.gl-filter-actions {
+  display: flex;
+  gap:     8px;
+}
+
+.gl-filter-apply-btn,
+.gl-filter-clear-btn {
+  flex:        1;
+  display:     inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap:         5px;
+  padding:     9px 12px;
+  border-radius: 8px;
+  font-size:   13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor:      pointer;
+  transition:  background var(--gl-trans), opacity var(--gl-trans);
+  border:      none;
+}
+
+.gl-filter-apply-btn {
+  background: var(--gl-primary);
+  color:      #fff;
+}
+.gl-filter-apply-btn:hover:not(:disabled) { background: #7c4fe0; }
+.gl-filter-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gl-filter-clear-btn {
+  background: var(--gl-surface-2);
+  color:      var(--gl-text-secondary);
+  border:     1px solid var(--gl-border);
+}
+.gl-filter-clear-btn:hover:not(:disabled) { background: var(--gl-surface3, rgba(255,255,255,0.08)); color: var(--gl-text-primary); }
+.gl-filter-clear-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ═══════════════════════════════════════════════════════════════
    SCROLLBAR (global)

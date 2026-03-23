@@ -2,10 +2,17 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import "../styles/GeoLens.css";
 import { useMapInit } from "../hooks/useMapInit";
 import { useLayerLoader } from "../hooks/useLayerLoader";
+import { useWfsEdit } from "../hooks/useWfsEdit";
 import { toLonLat, transformExtent } from "ol/proj";
 import { GEOSERVER_URL, getAuthHeaders } from "../config/geoserver";
 import GeoJSON from "ol/format/GeoJSON";
 import { getLength, getArea } from "ol/sphere";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import Style from "ol/style/Style";
+import Fill from "ol/style/Fill";
+import Stroke from "ol/style/Stroke";
+import CircleStyle from "ol/style/Circle";
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS
 ═══════════════════════════════════════════════════════════════ */
@@ -56,6 +63,7 @@ const NAV_ITEMS = [
   { id: "legend",   icon: "format_list_bulleted", label: "Legend"    },
   { id: "measure",  icon: "straighten",          label: "Measure"   },
   { id: "bookmark", icon: "bookmark",            label: "Bookmarks" },
+  { id: "spatial",  icon: "select_all",          label: "Spatial"   },
   { id: "filter",   icon: "filter_alt",          label: "Filter"    },
   { id: "settings", icon: "settings",            label: "Settings"  },
 ];
@@ -79,6 +87,13 @@ const MEASURE_TOOLS = [
   { id: "rectangle",  icon: "crop_square", label: "Rectangle", type: "area"     },
   { id: "polygon",    icon: "pentagon",    label: "Polygon",   type: "area"     },
   { id: "freehand",   icon: "gesture",     label: "Freeform",  type: "area"     },
+];
+
+const SPATIAL_TOOLS = [
+  { id: "circle",    icon: "circle",      label: "Circle"    },
+  { id: "rectangle", icon: "crop_square", label: "Rectangle" },
+  { id: "polygon",   icon: "pentagon",    label: "Polygon"   },
+  { id: "freehand",  icon: "gesture",     label: "Freeform"  },
 ];
 
 const _geoFmt = new GeoJSON();
@@ -242,52 +257,57 @@ function NavRail({ active, setActive }) {
 /* ═══════════════════════════════════════════════════════════════
    LAYER MANAGER PANEL
 ═══════════════════════════════════════════════════════════════ */
-function LayerManager({ layers, setLayers, geoLayers, geoVisibility, onToggleGeoLayer }) {
+function LayerManager({ layers, setLayers, geoLayers, geoVisibility, onToggleGeoLayer, wfsEditRef, activeEditLayerId }) {
   const [collapsed, setCollapsed] = useState(false);
   const toggle = (id) => setLayers((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  // const renderLayer = (layer, isActive) => (
-  //   <div
-  //     key={layer.id}
-  //     className={`gl-layer-row ${isActive ? "gl-layer-row-active" : ""}`}
-  //   >
-  //     <div className="gl-layer-row-left">
-  //       <MI
-  //         name={layer.icon}
-  //         filled={layer.filled}
-  //         className={isActive ? "gl-layer-icon-active" : "gl-layer-icon"}
-  //         style={{ fontSize: 20 }}
-  //       />
-  //       <span className="gl-layer-name">{layer.label}</span>
-  //     </div>
-  //     <LayerCheckbox
-  //       checked={layers[layer.id]}
-  //       onChange={() => toggle(layer.id)}
-  //     />
-  //   </div>
-  // );
 
   const wmsLayers = geoLayers.filter((l) => l.group === "wms");
   const wfsLayers = geoLayers.filter((l) => l.group === "wfs");
 
-  const renderGeoLayer = (layer) => (
-    <div key={layer.id} className="gl-layer-row" onClick={() => onToggleGeoLayer(layer.id)} style={{ cursor: "pointer" }}>
-      <div className="gl-layer-row-left">
-        <MI
-          name={layer.group === "wms" ? "map" : "scatter_plot"}
-          className="gl-layer-icon"
-          style={{ fontSize: 20 }}
-        />
-        <span className="gl-layer-name">{layer.name}</span>
+  const handleEditClick = (e, layerId) => {
+    e.stopPropagation();
+    if (activeEditLayerId === layerId) {
+      wfsEditRef?.current?.deactivate();
+    } else {
+      wfsEditRef?.current?.activate(layerId);
+    }
+  };
+
+  const renderGeoLayer = (layer) => {
+    const isEditing = layer.id === activeEditLayerId;
+    return (
+      <div
+        key={layer.id}
+        className={`gl-layer-row${isEditing ? " gl-layer-row--editing" : ""}`}
+        onClick={() => onToggleGeoLayer(layer.id)}
+        style={{ cursor: "pointer" }}
+      >
+        <div className="gl-layer-row-left">
+          <MI
+            name={layer.group === "wms" ? "map" : "scatter_plot"}
+            className={isEditing ? "gl-layer-icon-active" : "gl-layer-icon"}
+            style={{ fontSize: 20 }}
+          />
+          <span className="gl-layer-name">{layer.name}</span>
+        </div>
+        <div className="gl-layer-row-right" onClick={(e) => e.stopPropagation()}>
+          {layer.group === "wfs" && (
+            <button
+              className={`gl-layer-edit-btn${isEditing ? " gl-layer-edit-btn--active" : ""}`}
+              onClick={(e) => handleEditClick(e, layer.id)}
+              title={isEditing ? "Exit edit mode" : "Edit this layer"}
+            >
+              <MI name={isEditing ? "edit_off" : "edit"} style={{ fontSize: 16 }} />
+            </button>
+          )}
+          <LayerCheckbox
+            checked={!!geoVisibility[layer.id]}
+            onChange={() => onToggleGeoLayer(layer.id)}
+          />
+        </div>
       </div>
-      <span onClick={(e) => e.stopPropagation()}>
-        <LayerCheckbox
-          checked={!!geoVisibility[layer.id]}
-          onChange={() => onToggleGeoLayer(layer.id)}
-        />
-      </span>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={`gl-layer-panel${collapsed ? " gl-layer-panel--collapsed" : ""}`}>
@@ -628,6 +648,402 @@ function BookmarkPanel({ bookmarks, onAdd, onDelete, onFlyTo }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   SPATIAL SELECTION PANEL
+═══════════════════════════════════════════════════════════════ */
+function SpatialSelectionPanel({ spatialRef, resultCount }) {
+  const [activeTool, setActiveTool] = useState(null);
+
+  const handleActivate = (id) => {
+    setActiveTool(id);
+    spatialRef.current?.activate(id);
+  };
+
+  const handleClear = () => {
+    setActiveTool(null);
+    spatialRef.current?.clear();
+  };
+
+  // Reset active tool state when draw completes (MapCanvas calls this)
+  useEffect(() => {
+    if (!spatialRef) return;
+    const prev = spatialRef.current ?? {};
+    spatialRef.current = { ...prev, onDrawComplete: () => setActiveTool(null) };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="gl-spatial-panel">
+      <div className="gl-panel-header">
+        <h2 className="gl-panel-title">Spatial Selection</h2>
+      </div>
+
+      <div className="gl-panel-body gl-spatial-body">
+        <p className="gl-spatial-hint">
+          Draw a shape on the map — all visible WFS features within the area are selected and shown below.
+        </p>
+
+        {/* ── Tool Buttons ── */}
+        <div className="gl-spatial-tools">
+          {SPATIAL_TOOLS.map((tool) => (
+            <button
+              key={tool.id}
+              className={`gl-spatial-tool-btn${activeTool === tool.id ? " gl-spatial-tool-btn--active" : ""}`}
+              onClick={() => handleActivate(tool.id)}
+              title={tool.label}
+            >
+              <MI name={tool.icon} style={{ fontSize: 24 }} />
+              <span className="gl-spatial-tool-label">{tool.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Drawing status ── */}
+        {activeTool && (
+          <div className="gl-spatial-drawing">
+            <MI name="stylus" style={{ fontSize: 15 }} />
+            <span>
+              Drawing {SPATIAL_TOOLS.find((t) => t.id === activeTool)?.label}…
+              {activeTool === "polygon" || activeTool === "freehand"
+                ? " double-click to finish"
+                : ""}
+            </span>
+          </div>
+        )}
+
+        {/* ── Result badge ── */}
+        {resultCount !== null && !activeTool && (
+          <div className={`gl-spatial-results${resultCount === 0 ? " gl-spatial-results--empty" : ""}`}>
+            <MI name={resultCount > 0 ? "check_circle" : "search_off"} style={{ fontSize: 16 }} />
+            <span>
+              {resultCount === 0
+                ? "No features in drawn area"
+                : `${resultCount} feature${resultCount !== 1 ? "s" : ""} selected`}
+            </span>
+          </div>
+        )}
+
+        {/* ── Clear button ── */}
+        <button
+          className="gl-spatial-clear-btn"
+          onClick={handleClear}
+          disabled={!activeTool && resultCount === null}
+        >
+          <MI name="clear_all" style={{ fontSize: 16 }} />
+          Clear Selection
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER PANEL
+═══════════════════════════════════════════════════════════════ */
+const FILTER_OPERATORS = [
+  { value: "=",    label: "="        },
+  { value: "<>",   label: "≠"        },
+  { value: ">",    label: ">"        },
+  { value: "<",    label: "<"        },
+  { value: ">=",   label: "≥"        },
+  { value: "<=",   label: "≤"        },
+  { value: "LIKE", label: "contains" },
+];
+
+function FilterPanel({ geoLayers, filterRef, onFeaturesSelected }) {
+  const [selectedLayerId, setSelectedLayerId] = useState("");
+  const [propertyNames, setPropertyNames]     = useState([]);
+  const [filters, setFilters]                 = useState([]);
+  const [loading, setLoading]                 = useState(false);
+  const [resultCount, setResultCount]         = useState(null);
+
+  const wfsLayers    = geoLayers.filter((l) => l.group === "wfs");
+  const selectedLayer = wfsLayers.find((l) => l.id === selectedLayerId);
+
+  // Fetch a sample feature to discover property names when layer changes
+  useEffect(() => {
+    if (!selectedLayerId || !selectedLayer?.typeName) {
+      setPropertyNames([]);
+      setFilters([]);
+      setResultCount(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    const url =
+      `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature` +
+      `&typeName=${encodeURIComponent(selectedLayer.typeName)}&outputFormat=application/json&maxFeatures=1`;
+    fetch(url, { headers: getAuthHeaders() })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const props = data?.features?.[0]?.properties
+          ? Object.keys(data.features[0].properties).filter(
+              (k) => k.toLowerCase() !== "geometry"
+            )
+          : [];
+        setPropertyNames(props);
+        setFilters(
+          props.length > 0
+            ? [{ id: 1, property: props[0], operator: "=", value: "" }]
+            : []
+        );
+      })
+      .catch(console.error)
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedLayerId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const addFilter = () => {
+    if (!propertyNames.length) return;
+    setFilters((prev) => [
+      ...prev,
+      { id: Date.now(), property: propertyNames[0], operator: "=", value: "" },
+    ]);
+  };
+  const removeFilter  = (id) => setFilters((prev) => prev.filter((f) => f.id !== id));
+  const updateFilter  = (id, key, val) =>
+    setFilters((prev) => prev.map((f) => (f.id === id ? { ...f, [key]: val } : f)));
+
+  const handleApply = async () => {
+    if (!selectedLayer?.typeName) return;
+    setLoading(true);
+    setResultCount(null);
+    try {
+      const active = filters.filter((f) => f.property && f.value !== "");
+      let cql = "";
+      if (active.length > 0) {
+        cql = active
+          .map((f) => {
+            const isNum = f.value !== "" && !isNaN(Number(f.value));
+            const val   = isNum ? f.value : `'${f.value}'`;
+            if (f.operator === "LIKE") return `${f.property} LIKE '%${f.value}%'`;
+            return `${f.property}${f.operator}${val}`;
+          })
+          .join(" AND ");
+      }
+
+      let url =
+        `${GEOSERVER_URL}/wfs?service=WFS&version=1.1.0&request=GetFeature` +
+        `&typeName=${encodeURIComponent(selectedLayer.typeName)}` +
+        `&outputFormat=application/json&srsname=EPSG:4326`;
+      if (cql) url += `&CQL_FILTER=${encodeURIComponent(cql)}`;
+
+      const res  = await fetch(url, { headers: getAuthHeaders() });
+      const data = await res.json();
+
+      const features = (data?.features || []).map((f) => ({
+        layerName:  selectedLayer.name,
+        properties: { ...(f.properties || {}) },
+        geometry:   f.geometry,
+      }));
+
+      setResultCount(features.length);
+      filterRef.current?.highlight(features);
+      onFeaturesSelected(features);
+    } catch (e) {
+      console.error("Filter apply error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClear = () => {
+    setResultCount(null);
+    filterRef.current?.clearHighlight();
+    onFeaturesSelected([]);
+    if (propertyNames.length > 0)
+      setFilters([{ id: Date.now(), property: propertyNames[0], operator: "=", value: "" }]);
+  };
+
+  return (
+    <div className="gl-filter-panel">
+      <div className="gl-panel-header">
+        <h2 className="gl-panel-title">Filter Features</h2>
+      </div>
+
+      <div className="gl-panel-body gl-filter-body">
+        {/* ── Layer Selection ── */}
+        <div className="gl-filter-section">
+          <label className="gl-filter-label">
+            <MI name="layers" style={{ fontSize: 14, verticalAlign: "middle", marginRight: 4 }} />
+            Layer
+          </label>
+          <select
+            className="gl-filter-select"
+            value={selectedLayerId}
+            onChange={(e) => { setSelectedLayerId(e.target.value); setResultCount(null); }}
+          >
+            <option value="">— Select a WFS layer —</option>
+            {wfsLayers.map((l) => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+          {wfsLayers.length === 0 && (
+            <p className="gl-filter-hint">
+              No WFS layers loaded yet. Enable layers via the Layers panel first.
+            </p>
+          )}
+        </div>
+
+        {/* ── Filter Conditions ── */}
+        {selectedLayerId && !loading && propertyNames.length > 0 && (
+          <div className="gl-filter-section">
+            <div className="gl-filter-section-hdr">
+              <label className="gl-filter-label">
+                <MI name="tune" style={{ fontSize: 14, verticalAlign: "middle", marginRight: 4 }} />
+                Conditions
+              </label>
+              <button className="gl-filter-add-btn" onClick={addFilter}>
+                <MI name="add" style={{ fontSize: 14 }} /> Add
+              </button>
+            </div>
+            <div className="gl-filter-rows">
+              {filters.map((f, idx) => (
+                <div key={f.id} className="gl-filter-row">
+                  <span className="gl-filter-logic">{idx === 0 ? "WHERE" : "AND"}</span>
+                  <select
+                    className="gl-filter-prop-sel"
+                    value={f.property}
+                    onChange={(e) => updateFilter(f.id, "property", e.target.value)}
+                  >
+                    {propertyNames.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="gl-filter-op-sel"
+                    value={f.operator}
+                    onChange={(e) => updateFilter(f.id, "operator", e.target.value)}
+                  >
+                    {FILTER_OPERATORS.map((op) => (
+                      <option key={op.value} value={op.value}>{op.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    className="gl-filter-val-inp"
+                    value={f.value}
+                    onChange={(e) => updateFilter(f.id, "value", e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleApply()}
+                    placeholder="value…"
+                  />
+                  {filters.length > 1 && (
+                    <button className="gl-filter-rm-btn" onClick={() => removeFilter(f.id)}>
+                      <MI name="close" style={{ fontSize: 14 }} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Action Buttons ── */}
+        <div className="gl-filter-actions">
+          <button
+            className="gl-filter-apply-btn"
+            onClick={handleApply}
+            disabled={!selectedLayerId || loading}
+          >
+            <MI name="filter_alt" style={{ fontSize: 16 }} />
+            Apply Filter
+          </button>
+          <button
+            className="gl-filter-clear-btn"
+            onClick={handleClear}
+            disabled={!selectedLayerId}
+          >
+            <MI name="clear_all" style={{ fontSize: 16 }} />
+            Clear
+          </button>
+        </div>
+
+        {/* ── Loading Spinner ── */}
+        {loading && (
+          <div className="gl-filter-loading">
+            <MI name="sync" style={{ fontSize: 18 }} />
+            <span>Loading…</span>
+          </div>
+        )}
+
+        {/* ── Result Count ── */}
+        {resultCount !== null && !loading && (
+          <div className={`gl-filter-results${resultCount === 0 ? " gl-filter-results--empty" : ""}`}>
+            <MI name={resultCount > 0 ? "check_circle" : "search_off"} style={{ fontSize: 16 }} />
+            <span>
+              {resultCount === 0
+                ? "No features matched"
+                : `${resultCount} feature${resultCount !== 1 ? "s" : ""} found`}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WFS EDIT TOOLBAR (floating, shown while editing a WFS layer)
+═══════════════════════════════════════════════════════════════ */
+function WfsEditToolbar({
+  editLayerName, hasUnsaved, isSaving, insertActive, selectedFeature,
+  onAdd, onDelete, onSave, onExit,
+}) {
+  return (
+    <div className="gl-wfs-toolbar">
+      {/* Layer badge */}
+      <div className="gl-wfs-badge">
+        <MI name="edit" style={{ fontSize: 14 }} />
+        <span>{editLayerName || "WFS Layer"}</span>
+      </div>
+
+      <div className="gl-wfs-sep" />
+
+      {/* Add */}
+      <button
+        className={`gl-wfs-btn${insertActive ? " gl-wfs-btn--active" : ""}`}
+        onClick={onAdd}
+        disabled={isSaving}
+        title="Add new feature"
+      >
+        <MI name="add_location_alt" style={{ fontSize: 18 }} />
+        <span>Add</span>
+      </button>
+
+      {/* Delete */}
+      <button
+        className="gl-wfs-btn gl-wfs-btn--danger"
+        onClick={onDelete}
+        disabled={!selectedFeature || isSaving}
+        title="Delete selected feature"
+      >
+        <MI name="delete" style={{ fontSize: 18 }} />
+        <span>Delete</span>
+      </button>
+
+      {/* Save */}
+      <button
+        className={`gl-wfs-btn gl-wfs-btn--save${hasUnsaved ? " gl-wfs-btn--unsaved" : ""}`}
+        onClick={onSave}
+        disabled={!hasUnsaved || isSaving}
+        title="Save changes to GeoServer"
+      >
+        <MI
+          name={isSaving ? "sync" : "save"}
+          style={{ fontSize: 18, ...(isSaving ? { animation: "gl-spin 1s linear infinite" } : {}) }}
+        />
+        <span>{isSaving ? "Saving…" : "Save"}</span>
+      </button>
+
+      <div className="gl-wfs-sep" />
+
+      {/* Exit edit mode */}
+      <button className="gl-wfs-btn gl-wfs-btn--exit" onClick={onExit} title="Exit edit mode">
+        <MI name="close" style={{ fontSize: 18 }} />
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
    FLOATING TOOLBAR
 ═══════════════════════════════════════════════════════════════ */
 function FloatingToolbar({ activeTool, setActiveTool }) {
@@ -905,11 +1321,44 @@ function MapCanvas({
   bookmarkRef,
   onFeaturesSelected,
   selectedFeatures,
+  filterRef,
+  spatialRef,
+  onSpatialResult,
+  wfsEditRef,
+  onEditLayerChange,
 }) {
   const mapContainerRef = useRef(null);
   const { mapRef, layersRef, terraDrawRef, doubleClickZoomRef, dragPanRef } = useMapInit(mapContainerRef);
   const wfsLayerMetaRef = useRef({});
   const { availableLayers } = useLayerLoader(mapRef, layersRef, wfsLayerMetaRef);
+
+  // WFS editing
+  const {
+    editLayerId, hasUnsavedChanges, selectedWfsFeature,
+    insertActive, isSaving,
+    activateWfsEdit, deactivateWfsEdit,
+    saveWfsChanges, activateInsert, deleteSelectedFeature,
+  } = useWfsEdit(mapRef, layersRef, wfsLayerMetaRef);
+
+  // Expose activate/deactivate to parent via ref (set each render — same pattern as toggleLayerRef)
+  if (wfsEditRef) {
+    wfsEditRef.current = {
+      activate:   activateWfsEdit,
+      deactivate: deactivateWfsEdit,
+    };
+  }
+
+  // Notify parent when the active edit layer changes
+  useEffect(() => {
+    onEditLayerChange?.(editLayerId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editLayerId]);
+
+  const editLayerName = availableLayers.find((l) => l.id === editLayerId)?.name ?? editLayerId;
+
+  const drawContextRef    = useRef(null); // "measure" | "spatial" | null
+  const onSpatialResultRef = useRef(onSpatialResult);
+  useEffect(() => { onSpatialResultRef.current = onSpatialResult; }, [onSpatialResult]);
 
   // Fill the toggle ref so parent can call it
   toggleLayerRef.current = (id, visible, bbox4326) => {
@@ -1038,62 +1487,218 @@ function MapCanvas({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Register TerraDraw measure finish handler once draw instance is ready
+  // Highlight layer for filter results
   useEffect(() => {
     let rafId;
+    let removeLayer;
     const init = () => {
-      const draw = terraDrawRef.current;
-      if (draw) {
-        const enableInteractions = () => {
-          doubleClickZoomRef.current?.setActive(true);
-          dragPanRef.current?.setActive(true);
-        };
+      const map = mapRef.current;
+      if (!map) { rafId = requestAnimationFrame(init); return; }
 
-        draw.on("finish", (id) => {
-          enableInteractions();
-          const snapshot = draw.getSnapshot();
-          const feature = snapshot.find((f) => String(f.id) === String(id));
-          if (!feature) return;
-          const modeId = feature.properties?.mode;
-          const tool = MEASURE_TOOLS.find((t) => t.id === modeId);
-          if (!tool) return; // not a measure drawing — skip
-          const value = calcMeasurement(feature);
-          if (value) onMeasureResultRef?.current?.({ label: tool.label, value, type: tool.type });
-          try { draw.setMode("static"); } catch {}
-        });
-        if (measureRef) {
-          measureRef.current = {
-            activate: (mode) => {
-              if (!mode) {
-                enableInteractions();
-                try { draw.setMode("static"); } catch {}
-              } else {
-                // Disable conflicting OL interactions so TerraDraw can own pointer events
-                doubleClickZoomRef.current?.setActive(false);
-                dragPanRef.current?.setActive(false);
-                try { draw.setMode(mode); } catch {}
-              }
-            },
-            clear: () => {
-              draw.clear();
-              enableInteractions();
-              try { draw.setMode("static"); } catch {}
-            },
-          };
-        }
-      } else {
-        rafId = requestAnimationFrame(init);
+      const source = new VectorSource();
+      const layer  = new VectorLayer({
+        source,
+        style: new Style({
+          fill:   new Fill({ color: "rgba(255, 220, 0, 0.35)" }),
+          stroke: new Stroke({ color: "#FFD600", width: 3 }),
+          image:  new CircleStyle({
+            radius: 8,
+            fill:   new Fill({ color: "#FFD600" }),
+            stroke: new Stroke({ color: "#fff", width: 2 }),
+          }),
+        }),
+        zIndex: 200,
+      });
+      layer.set("isHighlight", true);
+      map.addLayer(layer);
+      removeLayer = () => map.removeLayer(layer);
+
+      if (filterRef) {
+        const fmt = new GeoJSON();
+        filterRef.current = {
+          highlight: (features) => {
+            source.clear();
+            const olFeats = features.flatMap((f) => {
+              if (!f.geometry) return [];
+              try {
+                return [fmt.readFeature(
+                  { type: "Feature", geometry: f.geometry, properties: f.properties },
+                  { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
+                )];
+              } catch { return []; }
+            });
+            source.addFeatures(olFeats);
+            if (olFeats.length > 0) {
+              const ext = source.getExtent();
+              if (ext && ext.every(isFinite))
+                map.getView().fit(ext, { duration: 600, padding: [60, 40, 220, 40] });
+            }
+          },
+          clearHighlight: () => source.clear(),
+        };
       }
     };
     rafId = requestAnimationFrame(init);
-    return () => cancelAnimationFrame(rafId);
+    return () => { cancelAnimationFrame(rafId); removeLayer?.(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // TerraDraw: measure + spatial selection finish handler
+  useEffect(() => {
+    let rafId;
+    let cleanupSpatialLayer;
+    const init = () => {
+      const draw = terraDrawRef.current;
+      const map  = mapRef.current;
+      if (!draw || !map) { rafId = requestAnimationFrame(init); return; }
+
+      const enableInteractions = () => {
+        doubleClickZoomRef.current?.setActive(true);
+        dragPanRef.current?.setActive(true);
+      };
+
+      // Spatial selection highlight layer (cyan)
+      const spatialSource = new VectorSource();
+      const spatialLayer  = new VectorLayer({
+        source: spatialSource,
+        style: new Style({
+          fill:   new Fill({ color: "rgba(0, 200, 255, 0.25)" }),
+          stroke: new Stroke({ color: "#00C8FF", width: 2.5 }),
+          image:  new CircleStyle({
+            radius: 8,
+            fill:   new Fill({ color: "#00C8FF" }),
+            stroke: new Stroke({ color: "#fff", width: 2 }),
+          }),
+        }),
+        zIndex: 201,
+      });
+      spatialLayer.set("isHighlight", true);
+      map.addLayer(spatialLayer);
+      cleanupSpatialLayer = () => map.removeLayer(spatialLayer);
+
+      draw.on("finish", (id) => {
+        enableInteractions();
+        const snapshot = draw.getSnapshot();
+        const feature  = snapshot.find((f) => String(f.id) === String(id));
+        if (!feature) return;
+        const modeId = feature.properties?.mode;
+        const ctx    = drawContextRef.current;
+        drawContextRef.current = null;
+
+        if (ctx === "spatial") {
+          // Convert drawn geometry to EPSG:3857 for spatial query
+          let drawnGeom;
+          try {
+            drawnGeom = _geoFmt.readGeometry(feature.geometry, {
+              dataProjection: "EPSG:4326", featureProjection: "EPSG:3857",
+            });
+          } catch { try { draw.setMode("static"); } catch {} return; }
+
+          const drawnExtent = drawnGeom.getExtent();
+          const selected    = [];
+          spatialSource.clear();
+
+          map.getLayers().forEach((layer) => {
+            if (!layer.getVisible?.()) return;
+            if (layer.get("isHighlight")) return; // skip highlight layers
+            const source = layer.getSource?.();
+            if (!source?.forEachFeatureIntersectingExtent) return;
+            const layerName = layer.get("title") || layer.get("name") || "WFS Layer";
+            source.forEachFeatureIntersectingExtent(drawnExtent, (feat) => {
+              const allProps = feat.getProperties();
+              if (allProps.mode !== undefined) return; // skip TerraDraw own features
+              const props = { ...allProps };
+              delete props.geometry;
+              selected.push({ layerName, properties: props });
+              spatialSource.addFeature(feat.clone());
+            });
+          });
+
+          onFeaturesSelectedRef.current?.(selected);
+          onSpatialResultRef.current?.(selected.length);
+          spatialRef?.current?.onDrawComplete?.();
+          try { draw.setMode("static"); } catch {}
+
+        } else {
+          // Measure context (or untagged fallback)
+          const tool = MEASURE_TOOLS.find((t) => t.id === modeId);
+          if (!tool) { try { draw.setMode("static"); } catch {} return; }
+          const value = calcMeasurement(feature);
+          if (value) onMeasureResultRef?.current?.({ label: tool.label, value, type: tool.type });
+          try { draw.setMode("static"); } catch {}
+        }
+      });
+
+      // measureRef API
+      if (measureRef) {
+        measureRef.current = {
+          activate: (mode) => {
+            if (!mode) {
+              enableInteractions();
+              drawContextRef.current = null;
+              try { draw.setMode("static"); } catch {}
+            } else {
+              drawContextRef.current = "measure";
+              doubleClickZoomRef.current?.setActive(false);
+              dragPanRef.current?.setActive(false);
+              try { draw.setMode(mode); } catch {}
+            }
+          },
+          clear: () => {
+            draw.clear();
+            drawContextRef.current = null;
+            enableInteractions();
+            try { draw.setMode("static"); } catch {}
+          },
+        };
+      }
+
+      // spatialRef API
+      if (spatialRef) {
+        const prev = spatialRef.current ?? {};
+        spatialRef.current = {
+          ...prev,
+          activate: (mode) => {
+            draw.clear();
+            spatialSource.clear();
+            drawContextRef.current = "spatial";
+            doubleClickZoomRef.current?.setActive(false);
+            dragPanRef.current?.setActive(false);
+            try { draw.setMode(mode); } catch {}
+          },
+          clear: () => {
+            draw.clear();
+            spatialSource.clear();
+            drawContextRef.current = null;
+            enableInteractions();
+            try { draw.setMode("static"); } catch {}
+            onFeaturesSelectedRef.current?.([]);
+            onSpatialResultRef.current?.(null);
+          },
+        };
+      }
+    };
+    rafId = requestAnimationFrame(init);
+    return () => { cancelAnimationFrame(rafId); cleanupSpatialLayer?.(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    // <div className="gl-map">
     <div ref={mapContainerRef} className={`map-container${mapMode === "select" ? " map-container--select" : ""}`}>
       <FloatingToolbar activeTool={activeTool} setActiveTool={setActiveTool} />
+      {editLayerId && (
+        <WfsEditToolbar
+          editLayerName={editLayerName}
+          hasUnsaved={hasUnsavedChanges}
+          isSaving={isSaving}
+          insertActive={insertActive}
+          selectedFeature={selectedWfsFeature}
+          onAdd={activateInsert}
+          onDelete={deleteSelectedFeature}
+          onSave={saveWfsChanges}
+          onExit={deactivateWfsEdit}
+        />
+      )}
       <BasemapWidget layersRef={layersRef} mapRef={mapRef} mapMode={mapMode} setMapMode={setMapMode} />
       <ObjectInventory
         collapsed={tableCollapsed}
@@ -1130,6 +1735,12 @@ export default function GeoLens() {
   const [geoLayers, setGeoLayers] = useState([]);
   const [geoVisibility, setGeoVisibility] = useState({});
   const toggleLayerRef = useRef(null);
+  const filterRef      = useRef(null);
+  const spatialRef     = useRef(null);
+  const wfsEditRef     = useRef(null);
+
+  const [spatialResultCount, setSpatialResultCount] = useState(null);
+  const [activeEditLayerId, setActiveEditLayerId]   = useState(null);
 
   // Bookmark state
   const [bookmarks, setBookmarks]   = useState(loadBookmarks);
@@ -1211,6 +1822,8 @@ export default function GeoLens() {
               geoLayers={geoLayers}
               geoVisibility={geoVisibility}
               onToggleGeoLayer={handleToggleGeoLayer}
+              wfsEditRef={wfsEditRef}
+              activeEditLayerId={activeEditLayerId}
             />
           )}
           {activeNav === "legend" && (
@@ -1232,6 +1845,19 @@ export default function GeoLens() {
               onFlyTo={handleFlyToBookmark}
             />
           )}
+          {activeNav === "spatial" && (
+            <SpatialSelectionPanel
+              spatialRef={spatialRef}
+              resultCount={spatialResultCount}
+            />
+          )}
+          {activeNav === "filter" && (
+            <FilterPanel
+              geoLayers={geoLayers}
+              filterRef={filterRef}
+              onFeaturesSelected={handleFeaturesSelected}
+            />
+          )}
           {/* Interactive Map */}
           <MapCanvas
             activeTool={activeTool}
@@ -1249,6 +1875,11 @@ export default function GeoLens() {
             bookmarkRef={bookmarkRef}
             onFeaturesSelected={handleFeaturesSelected}
             selectedFeatures={selectedFeatures}
+            filterRef={filterRef}
+            spatialRef={spatialRef}
+            onSpatialResult={setSpatialResultCount}
+            wfsEditRef={wfsEditRef}
+            onEditLayerChange={setActiveEditLayerId}
           />
         </main>
       </div>

@@ -108,7 +108,7 @@ export function useLayerLoader(mapRef, layersRef, wfsLayerMetaRef) {
             geometryType:  wt.geometryType,
           };
 
-          return { id, name: wt.title, group: 'wfs', defaultVisible: false, bbox4326: wt.bbox4326, color, geometryType: wt.geometryType };
+          return { id, name: wt.title, group: 'wfs', defaultVisible: false, bbox4326: wt.bbox4326, color, geometryType: wt.geometryType, typeName: wt.fullName };
         });
 
         setAvailableLayers([
