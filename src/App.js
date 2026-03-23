@@ -18,8 +18,8 @@ function App() {
           path="/map"
           element={
             isProduction
-              ? <MapPage />
-              : <GeoLens />
+              ? <GeoLens />
+              : <MapPage />
           }
         />
         {/* <Route path="/map" element={<ArcGISWebEditor />} /> */}
