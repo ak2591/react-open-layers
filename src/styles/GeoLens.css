@@ -607,7 +607,7 @@
 /* ─── WFS Edit Toolbar ──────────────────────────────────────── */
 .gl-wfs-toolbar {
   position:        absolute;
-  top:             64px;
+  top:             16px;
   left:            50%;
   transform:       translateX(-50%);
   z-index:         51;

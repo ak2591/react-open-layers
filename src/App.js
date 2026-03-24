@@ -14,16 +14,16 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        {/* <Route
+        <Route
           path="/map"
           element={
             isProduction
               ? <GeoLens />
               : <MapPage />
           }
-        /> */}
+        />
         {/* <Route path="/map" element={<ArcGISWebEditor />} /> */}
-        <Route path="/map" element={<GeoLens />} />
+        {/* <Route path="/map" element={<GeoLens />} /> */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

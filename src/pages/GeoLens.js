@@ -112,7 +112,6 @@ function calcMeasurement(feature) {
     }
     const sqm = getArea(olGeom);
     if (sqm >= 1_000_000) return `${(sqm / 1_000_000).toFixed(2)} km²`;
-    if (sqm >= 10_000)    return `${(sqm / 10_000).toFixed(2)} ha`;
     return `${Math.round(sqm)} m²`;
   } catch {
     return null;
@@ -985,7 +984,8 @@ function FilterPanel({ geoLayers, filterRef, onFeaturesSelected }) {
 ═══════════════════════════════════════════════════════════════ */
 function WfsEditToolbar({
   editLayerName, hasUnsaved, isSaving, insertActive, selectedFeature,
-  onAdd, onDelete, onSave, onExit,
+  canUndo, canRedo,
+  onAdd, onDelete, onSave, onUndo, onRedo, onExit,
 }) {
   return (
     <div className="gl-wfs-toolbar">
@@ -1018,6 +1018,32 @@ function WfsEditToolbar({
         <MI name="delete" style={{ fontSize: 18 }} />
         <span>Delete</span>
       </button>
+
+      <div className="gl-wfs-sep" />
+
+      {/* Undo */}
+      <button
+        className="gl-wfs-btn"
+        onClick={onUndo}
+        disabled={!canUndo || isSaving}
+        title="Undo (Ctrl+Z)"
+      >
+        <MI name="undo" style={{ fontSize: 18 }} />
+        <span>Undo</span>
+      </button>
+
+      {/* Redo */}
+      <button
+        className="gl-wfs-btn"
+        onClick={onRedo}
+        disabled={!canRedo || isSaving}
+        title="Redo (Ctrl+Y)"
+      >
+        <MI name="redo" style={{ fontSize: 18 }} />
+        <span>Redo</span>
+      </button>
+
+      <div className="gl-wfs-sep" />
 
       {/* Save */}
       <button
@@ -1336,8 +1362,10 @@ function MapCanvas({
   const {
     editLayerId, hasUnsavedChanges, selectedWfsFeature,
     insertActive, isSaving,
+    canUndo, canRedo,
     activateWfsEdit, deactivateWfsEdit,
     saveWfsChanges, activateInsert, deleteSelectedFeature,
+    undoEdit, redoEdit,
   } = useWfsEdit(mapRef, layersRef, wfsLayerMetaRef);
 
   // Expose activate/deactivate to parent via ref (set each render — same pattern as toggleLayerRef)
@@ -1355,6 +1383,27 @@ function MapCanvas({
   }, [editLayerId]);
 
   const editLayerName = availableLayers.find((l) => l.id === editLayerId)?.name ?? editLayerId;
+
+  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Y / Ctrl+Shift+Z = redo (only while editing)
+  const undoEditRef = useRef(undoEdit);
+  const redoEditRef = useRef(redoEdit);
+  useEffect(() => { undoEditRef.current = undoEdit; }, [undoEdit]);
+  useEffect(() => { redoEditRef.current = redoEdit; }, [redoEdit]);
+  useEffect(() => {
+    if (!editLayerId) return;
+    const handler = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.key === 'z' || e.key === 'Z') {
+        if (e.shiftKey) { e.preventDefault(); redoEditRef.current(); }
+        else            { e.preventDefault(); undoEditRef.current(); }
+      } else if (e.key === 'y' || e.key === 'Y') {
+        e.preventDefault();
+        redoEditRef.current();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [editLayerId]);
 
   const drawContextRef    = useRef(null); // "measure" | "spatial" | null
   const onSpatialResultRef = useRef(onSpatialResult);
@@ -1685,7 +1734,7 @@ function MapCanvas({
 
   return (
     <div ref={mapContainerRef} className={`map-container${mapMode === "select" ? " map-container--select" : ""}`}>
-      <FloatingToolbar activeTool={activeTool} setActiveTool={setActiveTool} />
+      {/* <FloatingToolbar activeTool={activeTool} setActiveTool={setActiveTool} /> */}
       {editLayerId && (
         <WfsEditToolbar
           editLayerName={editLayerName}
@@ -1693,9 +1742,13 @@ function MapCanvas({
           isSaving={isSaving}
           insertActive={insertActive}
           selectedFeature={selectedWfsFeature}
+          canUndo={canUndo}
+          canRedo={canRedo}
           onAdd={activateInsert}
           onDelete={deleteSelectedFeature}
           onSave={saveWfsChanges}
+          onUndo={undoEdit}
+          onRedo={redoEdit}
           onExit={deactivateWfsEdit}
         />
       )}
